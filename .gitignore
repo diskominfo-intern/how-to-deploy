@@ -1,0 +1,6 @@
+dist-cpanel/
+deploy-cpanel.tar.gz
+node_modules/
+.env
+app-debug.log
+.DS_Store

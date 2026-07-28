@@ -1,0 +1,6 @@
+[submodule "nest-backend-boilerplate"]
+	path = nest-backend-boilerplate
+	url = https://github.com/diskominfo-intern/nest-backend-boilerplate.git
+[submodule "next-frontend-boilerplate"]
+	path = next-frontend-boilerplate
+	url = https://github.com/diskominfo-intern/next-frontend-boilerplate.git

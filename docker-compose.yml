@@ -1,0 +1,44 @@
+services:
+  mysql_db:
+    image: mysql:8.0
+    container_name: test_mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: test_backend
+      MYSQL_USER: testuser
+      MYSQL_PASSWORD: testpassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./nest-backend-boilerplate
+      dockerfile: Dockerfile
+    container_name: test_nest_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "mysql://testuser:testpassword@mysql_db:3306/test_backend"
+      JWT_SECRET: "secret-key-super-aman-anda"
+    depends_on:
+      - mysql_db
+
+  frontend:
+    build:
+      context: ./next-frontend-boilerplate
+      dockerfile: Dockerfile
+    container_name: test_next_frontend
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:3000"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
