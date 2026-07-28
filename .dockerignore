@@ -1,0 +1,7 @@
+**/node_modules
+**/.next
+**/dist
+dist-cpanel
+deploy-cpanel.tar.gz
+.git
+app-debug.log

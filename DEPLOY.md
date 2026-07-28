@@ -200,12 +200,33 @@ app.listen(PORT, () => {
 
 ## Bagian 2: Simulasi Lokal Menggunakan Docker Compose
 
-Daftar file pendukung untuk simulasi Docker lokal:
-- [`docker-compose.yml`](file:///c:/Users/HP/Test%20Intern/test-deploy/docker-compose.yml)
-- [`nest-backend-boilerplate/Dockerfile`](file:///c:/Users/HP/Test%20Intern/test-deploy/nest-backend-boilerplate/Dockerfile)
-- [`next-frontend-boilerplate/Dockerfile`](file:///c:/Users/HP/Test%20Intern/test-deploy/next-frontend-boilerplate/Dockerfile)
+Terdapat 2 metode simulasi Docker lokal yang dapat Anda gunakan:
 
-Jalankan simulasi lokal di terminal:
+### Opsi A: Simulasi 1-Slot Node.js App (Persis Lingkungan cPanel Production) 🌟
+Menggunakan **1 Container Node.js (`cpanel_app`)** yang menjalankan Master Gateway `app.js` + **1 Container MySQL**:
+- File pendukung: [`docker-compose.cpanel.yml`](./docker-compose.cpanel.yml) & [`Dockerfile.cpanel`](./Dockerfile.cpanel)
+
+Perintah menjalankan:
+```bash
+# 1. Build & jalankan container
+docker-compose -f docker-compose.cpanel.yml up --build -d
+
+# 2. Sync Schema & Seed Database di dalam container
+docker exec -w /app/backend cpanel_node_app npx prisma@5.22.0 db push
+docker exec -w /app/backend cpanel_node_app npx ts-node prisma/seed.ts
+```
+- **Web UI & API (via Master Gateway)**: [http://localhost:3000](http://localhost:3000)
+- **API Docs**: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
+
+---
+
+### Opsi B: Simulasi Multi-Container Terpisah (Development Mode)
+Menggunakan 2 container terpisah untuk backend (`port 3000`) dan frontend (`port 3001`):
+- File pendukung: [`docker-compose.yml`](./docker-compose.yml), [`nest-backend-boilerplate/Dockerfile`](./nest-backend-boilerplate/Dockerfile), [`next-frontend-boilerplate/Dockerfile`](./next-frontend-boilerplate/Dockerfile)
+
+Perintah menjalankan:
 ```bash
 docker-compose up --build -d
 ```
+
+---
