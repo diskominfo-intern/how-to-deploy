@@ -142,12 +142,20 @@ process.on('exit', () => {
   frontendProcess.kill();
 });
 
-// 3. Proxy request /api/* ke NestJS Backend (Port 3002)
+// 3. Proxy request API & Documentation ke NestJS Backend (Port 3002) tanpa menghapus path
 app.use(
-  '/api',
   createProxyMiddleware({
     target: 'http://127.0.0.1:3002',
     changeOrigin: true,
+    pathFilter: (pathname) => {
+      return (
+        pathname.startsWith('/api-docs') ||
+        pathname.startsWith('/api') ||
+        pathname.startsWith('/auth') ||
+        pathname.startsWith('/product') ||
+        pathname.startsWith('/user')
+      );
+    },
   })
 );
 
