@@ -8,7 +8,7 @@ Aplikasi ini dirancang untuk dapat berjalan sempurna di server **cPanel Diskomin
 
 > 💡 **Penggunaan Template Langsung:**
 > - Untuk membuat Web App baru, Anda bisa langsung mengklik **"Use this template"** pada repositori [next-frontend-boilerplate](https://github.com/diskominfo-intern/next-frontend-boilerplate) dan [nest-backend-boilerplate](https://github.com/diskominfo-intern/nest-backend-boilerplate).
-> - **Fleksibilitas Backend & Mobile App**: Jika di masa depan backend diganti menggunakan framework lain (seperti **Python FastAPI**, **Express**, **Laravel**), atau jika backend NestJS hanya digunakan untuk **Mobile App (Flutter/React Native)** tanpa frontend Next.js, blueprint ini sangat fleksibel untuk disesuaikan.
+> - **Fleksibilitas Backend & Mobile App**: Jika di masa depan backend diganti menggunakan framework Node.js lain (seperti **Express**, **Koa**), atau jika backend NestJS hanya digunakan untuk **Mobile App (Flutter/React Native)** tanpa frontend Next.js, blueprint ini sangat fleksibel untuk disesuaikan.
 
 ---
 
