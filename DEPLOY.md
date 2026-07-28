@@ -153,7 +153,8 @@ app.use(
         pathname.startsWith('/api') ||
         pathname.startsWith('/auth') ||
         pathname.startsWith('/product') ||
-        pathname.startsWith('/user')
+        pathname === '/user/profile' ||
+        pathname.startsWith('/user/profile/')
       );
     },
   })
