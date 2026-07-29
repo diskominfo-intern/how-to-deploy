@@ -21,9 +21,9 @@ Dokumen ini berisi panduan komprehensif untuk:
 
 ## Bagian 1: Panduan Deployment cPanel (1 Node.js App Slot)
 
-### 1. Struktur Direktori Lokal Proyek
+### 1. Struktur Direktori Lokal Proyek & Skenario Repository Intern
 
-Di komputer lokal, kedua repositori (backend & frontend) dinaungi di bawah 1 root folder yang sama:
+Di komputer lokal, kedua komponen aplikasi (backend & frontend) dinaungi di bawah 1 root folder yang sama:
 
 ```text
 /test-deploy/ (Root Project)
@@ -34,6 +34,63 @@ Di komputer lokal, kedua repositori (backend & frontend) dinaungi di bawah 1 roo
 ├── package-master.json        <-- Config Dependencies Gateway
 └── build-cpanel.sh            <-- Script Otomatis 1-Click Build & Pack
 ```
+
+---
+
+#### 💡 Penanganan 2 Skenario Struktur Repository Intern
+
+Dalam praktik magang, anak intern dapat mengorganisir kodenya dalam 2 cara:
+
+##### **Skenario A: 2 Repository Terpisah (Frontend & Backend Dipisah)**
+Jika intern membuat 2 repo terpisah dari template:
+1. Gunakan repo `how-to-deploy` ini sebagai wadah deployment.
+2. Clone kedua repo intern ke subfolder masing-masing di dalam `how-to-deploy`:
+   ```bash
+   git clone <URL_REPO_FE_INTERN> next-frontend-boilerplate
+   git clone <URL_REPO_BE_INTERN> nest-backend-boilerplate
+   ```
+3. Jalankan `build-cpanel.ps1` (Windows) atau `bash build-cpanel.sh` (Linux/Git Bash).
+
+##### **Skenario B: 1 Repository Gabungan / Monorepo (misal: `persuratan-diskominfo`)**
+Jika intern menyatukan kodenya ke 1 repo yang berisi subfolder `frontend-persuratan/` dan `backend-persuratan/`:
+1. Minta intern **menyalin (copy)** file-file pendukung deployment berikut dari `how-to-deploy` ke root project monorepo mereka:
+   - `app.js`, `server-cpanel.js`, `package-master.json`, `build-cpanel.ps1` / `build-cpanel.sh`, `docker-compose.yml`, `docker-compose.cpanel.yml`, dan `Dockerfile.cpanel`.
+2. **Penyesuaian Nama Folder di File Konfigurasi (Ubah `nest-backend-boilerplate` ➡️ `backend-persuratan` & `next-frontend-boilerplate` ➡️ `frontend-persuratan`)**:
+
+   * **A. Di File `build-cpanel.ps1` (Script Build cPanel Windows)**:
+     ```powershell
+     # Contoh penyesuaian folder di build-cpanel.ps1:
+     Set-Location -Path "backend-persuratan"  # (sebelumnya nest-backend-boilerplate)
+     npm run build
+     Set-Location -Path ".."
+
+     Set-Location -Path "frontend-persuratan" # (sebelumnya next-frontend-boilerplate)
+     npm run build
+     Set-Location -Path ".."
+     ```
+
+   * **B. Di File `docker-compose.yml` (Simulasi Docker Local)**:
+     ```yaml
+     backend:
+       build:
+         context: ./backend-persuratan       # (sebelumnya ./nest-backend-boilerplate)
+         dockerfile: Dockerfile
+       ...
+     frontend:
+       build:
+         context: ./frontend-persuratan      # (sebelumnya ./next-frontend-boilerplate)
+         dockerfile: Dockerfile
+       ...
+     ```
+
+   * **C. Di File `Dockerfile.cpanel` (Simulasi Docker cPanel 1-Slot)**:
+     ```dockerfile
+     # Ubah baris COPY folder di Dockerfile.cpanel:
+     COPY ./backend-persuratan /app/backend-persuratan
+     COPY ./frontend-persuratan /app/frontend-persuratan
+     ```
+
+3. Minta intern menjalankan `docker compose up -d` (untuk test Docker lokal) atau `powershell -ExecutionPolicy Bypass -File build-cpanel.ps1` (untuk membuat paket `deploy-cpanel.tar.gz`).
 
 ---
 
