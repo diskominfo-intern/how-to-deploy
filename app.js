@@ -1,10 +1,39 @@
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Auto-sync database schema jika DATABASE_URL tersedia
+if (process.env.DATABASE_URL) {
+  const backendPath = path.join(__dirname, 'backend');
+  if (fs.existsSync(path.join(backendPath, 'prisma'))) {
+    console.log("🔄 Syncing database schema with Prisma...");
+    let retries = 5;
+    while (retries > 0) {
+      try {
+        execSync('npx prisma db push --accept-data-loss', {
+          cwd: backendPath,
+          stdio: 'inherit',
+          env: process.env,
+        });
+        console.log("✅ Database schema synchronized!");
+        break;
+      } catch (err) {
+        retries--;
+        console.warn(`⚠️ Prisma db push failed. Retrying in 3 seconds... (${retries} attempts left)`);
+        if (retries === 0) {
+          console.error("❌ Failed to push Prisma schema after retries.");
+        } else {
+          execSync('sleep 3 2>/dev/null || timeout /t 3 2>/dev/null || node -e "setTimeout(()=>{},3000)"');
+        }
+      }
+    }
+  }
+}
 
 // 1. Jalankan NestJS Backend secara internal di Port 3002
 const backendProcess = spawn('node', [path.join(__dirname, 'backend/dist/main.js')], {

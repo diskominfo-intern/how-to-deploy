@@ -202,12 +202,29 @@ console.log("PORT asli:", process.env.PORT);
 console.log("=========================================");
 
 try {
-  // Cek apakah kita sedang berjalan di dalam folder hasil ekstrak standalone (di cPanel)
+  // 1. Cek langsung di root __dirname
   if (fs.existsSync(path.join(__dirname, 'server.js'))) {
     require('./server.js');
   } else {
-    // Fallback jika dijalankan di root project lokal
-    require('./.next/standalone/server.js');
+    // 2. Cari subfolder secara dinamis di __dirname yang memiliki file server.js (misal: frontend, frontend-persuratan, dll)
+    const subDirs = fs.readdirSync(__dirname, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory() && dirent.name !== 'node_modules' && dirent.name !== '.next');
+    
+    let foundServer = null;
+    for (const dir of subDirs) {
+      const candidatePath = path.join(__dirname, dir.name, 'server.js');
+      if (fs.existsSync(candidatePath)) {
+        foundServer = `./${dir.name}/server.js`;
+        break;
+      }
+    }
+
+    if (foundServer) {
+      require(foundServer);
+    } else {
+      // 3. Fallback jika dijalankan di root project lokal
+      require('./.next/standalone/server.js');
+    }
   }
 } catch (err) {
   console.error("FATAL ERROR: Gagal memuat standalone server.", err);
