@@ -40,14 +40,14 @@ for file in "${FILES[@]}"; do
     # Ganti placeholder backend lama dengan nama folder backend baru
     for old_b in "${OLD_BACKENDS[@]}"; do
       if [ "$old_b" != "$BACKEND_DIR" ]; then
-        perl -pi -e "s|\b$old_b\b|$BACKEND_DIR|g" "$file" 2>/dev/null || sed -i "s|$old_b|$BACKEND_DIR|g" "$file"
+        sed -i "s|$old_b|$BACKEND_DIR|g" "$file"
       fi
     done
 
     # Ganti placeholder frontend lama dengan nama folder frontend baru
     for old_f in "${OLD_FRONTENDS[@]}"; do
       if [ "$old_f" != "$FRONTEND_DIR" ]; then
-        perl -pi -e "s|\b$old_f\b|$FRONTEND_DIR|g" "$file" 2>/dev/null || sed -i "s|$old_f|$FRONTEND_DIR|g" "$file"
+        sed -i "s|$old_f|$FRONTEND_DIR|g" "$file"
       fi
     done
 
