@@ -5,12 +5,20 @@ Write-Host "==========================================================" -Foregro
 # 1. Build Backend
 Write-Host "[1/4] Building NestJS Backend..." -ForegroundColor Yellow
 Set-Location -Path "nest-backend-boilerplate"
+if (-not (Test-Path "node_modules")) {
+    Write-Host "Installing backend dependencies..." -ForegroundColor Cyan
+    npm install
+}
 npm run build
 Set-Location -Path ".."
 
 # 2. Build Frontend
 Write-Host "[2/4] Building Next.js Frontend (Standalone)..." -ForegroundColor Yellow
 Set-Location -Path "next-frontend-boilerplate"
+if (-not (Test-Path "node_modules")) {
+    Write-Host "Installing frontend dependencies..." -ForegroundColor Cyan
+    npm install
+}
 npm run build
 Set-Location -Path ".."
 
