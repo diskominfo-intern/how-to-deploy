@@ -42,6 +42,9 @@ if (Test-Path "nest-backend-boilerplate/prisma") { Copy-Item -Recurse "nest-back
 
 # Copy Frontend files
 Copy-Item -Recurse "next-frontend-boilerplate/.next/standalone/*" "dist-cpanel/frontend/"
+if (Test-Path "next-frontend-boilerplate/.next/standalone/.next") {
+    Copy-Item -Recurse "next-frontend-boilerplate/.next/standalone/.next" "dist-cpanel/frontend/"
+}
 New-Item -ItemType Directory -Path "dist-cpanel/frontend/public" -Force | Out-Null
 New-Item -ItemType Directory -Path "dist-cpanel/frontend/.next/static" -Force | Out-Null
 if (Test-Path "next-frontend-boilerplate/public") { Copy-Item -Recurse "next-frontend-boilerplate/public/*" "dist-cpanel/frontend/public/" }

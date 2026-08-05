@@ -41,7 +41,7 @@ cp nest-backend-boilerplate/package*.json dist-cpanel/backend/
 cp -R nest-backend-boilerplate/prisma dist-cpanel/backend/prisma 2>/dev/null || true
 
 # Copy Frontend files
-cp -R next-frontend-boilerplate/.next/standalone/* dist-cpanel/frontend/
+cp -R next-frontend-boilerplate/.next/standalone/. dist-cpanel/frontend/
 mkdir -p dist-cpanel/frontend/public dist-cpanel/frontend/.next/static
 cp -R next-frontend-boilerplate/public/* dist-cpanel/frontend/public/ 2>/dev/null || true
 cp -R next-frontend-boilerplate/.next/static/* dist-cpanel/frontend/.next/static/
