@@ -7,6 +7,7 @@ set -e
 # Script ini secara otomatis memperbarui rute folder di:
 # - Dockerfile.cpanel
 # - build-cpanel.sh
+# - build-cpanel.ps1
 # - docker-compose.yml
 #
 # Penggunaan:
@@ -27,7 +28,7 @@ echo "📌 Backend Target  : $BACKEND_DIR"
 echo "📌 Frontend Target : $FRONTEND_DIR"
 echo "----------------------------------------------------------"
 
-FILES=("Dockerfile.cpanel" "build-cpanel.sh" "docker-compose.yml")
+FILES=("Dockerfile.cpanel" "build-cpanel.sh" "build-cpanel.ps1" "docker-compose.yml")
 
 # Pola nama lama/boilerplate yang sering digunakan
 OLD_BACKENDS=("nest-backend-boilerplate" "backend")
