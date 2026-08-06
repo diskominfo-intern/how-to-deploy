@@ -14,11 +14,14 @@ Aplikasi ini dirancang untuk dapat berjalan sempurna di server **cPanel Diskomin
 
 ## 📑 Fitur & Keunggulan Blueprint Ini
 
-- ⚡ **1-Click Build & Packaging**: Disediakan script `build-cpanel.ps1` & `build-cpanel.sh` yang sekali klik langsung mengompilasi backend, frontend standalone, menyalin file publik/statis, dan membungkus semuanya menjadi **1 file tunggal `deploy-cpanel.tar.gz`**.
-- 🛠️ **1 Slot Node.js App cPanel**: Menggunakan Master Gateway Server (`app.js`) yang membagikan lalu lintas URL `/api` ➡️ NestJS dan sisanya ➡️ Next.js secara internal.
-- 📝 **File Logger cPanel (`server-cpanel.js`)**: Memastikan Next.js dapat membaca socket/pipe PORT cPanel tanpa error `parseInt`, serta otomatis mencatat log ke `app-debug.log` untuk kemudahan debugging tanpa SSH.
+- ⚡ **1-Click Build & Packaging**: Disediakan script `build-cpanel.ps1` & `build-cpanel.sh` (dengan auto-check/install `node_modules`) yang sekali klik langsung mengompilasi backend, frontend standalone, menyalin file publik/statis, dan membungkus semuanya menjadi **1 file tunggal `deploy-cpanel.tar.gz`**.
+- 🛠️ **1 Slot Node.js App cPanel**: Menggunakan Master Gateway Server (`app.js`) yang membagikan lalu lintas URL `/api` & `/api-docs` ➡️ NestJS (Port 39002) dan sisanya ➡️ Next.js (Port 39001) secara internal dengan error handler proxy yang informatif.
+- 📜 **Centralized Gateway Logging & `/log` Viewer**: Master Gateway mencatat log aktivitas spawn process, proxy error, dan status server ke file `log.txt` di root + menyediakan endpoint `GET /log` untuk inspeksi log via browser tanpa SSH.
+- 🔄 **Auto Database Sync & Prisma Retry**: Gateway secara otomatis menjalankan sync schema database Prisma (`npx prisma db push`) dengan retry hingga 5x saat booting.
+- 🔧 **Script Penyesuaian Nama Folder (`fix-folder-names.sh`)**: Script otomatis untuk menyesuaikan rute subfolder backend/frontend di `build-cpanel.sh`, `docker-compose.yml`, dan `Dockerfile.cpanel` saat menggunakan repo monorepo intern.
+- 📝 **File Logger cPanel (`server-cpanel.js`)**: Memastikan Next.js dapat membaca socket/pipe PORT cPanel tanpa error `parseInt`, otomatis mencari `server.js` di subfolder, serta mencatat log ke `app-debug.log`.
 - 🗄️ **Remote MySQL Migration**: Memungkinkan migrasi schema Prisma dan seeding database MySQL cPanel dilakukan langsung dari komputer lokal.
-- 🐳 **Simulasi Lokal Docker**: Siap diuji secara lokal dengan 3 container Docker (`mysql_db`, `backend`, `frontend`).
+- 🐳 **Simulasi Lokal Docker**: Siap diuji secara lokal dengan 3 container Docker (`mysql_db`, `backend`, `frontend`) atau 1-slot container (`docker-compose.cpanel.yml`).
 
 ---
 
@@ -33,6 +36,7 @@ how-to-deploy/ (Root Blueprint)
 ├── package-master.json        <-- Dependencies Master Gateway
 ├── build-cpanel.ps1           <-- Script 1-Click Build & Pack (PowerShell Windows)
 ├── build-cpanel.sh            <-- Script 1-Click Build & Pack (Bash/Linux/Git Bash)
+├── fix-folder-names.sh        <-- Script Otomatis Penyesuaian Nama Folder Project
 ├── docker-compose.yml         <-- Konfigurasi Simulasi Docker Lokal
 ├── DEPLOY.md                  <-- Dokumentasi Panduan Deployment Detail
 └── README.md                  <-- Dokumentasi Utama Blueprint

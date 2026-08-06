@@ -72,9 +72,9 @@ if (process.env.DATABASE_URL) {
   }
 }
 
-// Port Internal Khusus
-const BACKEND_PORT = '39002';
-const FRONTEND_PORT = '39001';
+// Port Internal Khusus (Dapat diatur via Environment Variables di cPanel, dengan fallback port default)
+const BACKEND_PORT = process.env.BACKEND_PORT || '39002';
+const FRONTEND_PORT = process.env.FRONTEND_PORT || '39001';
 
 // Status Kesiapan Process
 let isBackendAlive = false;
