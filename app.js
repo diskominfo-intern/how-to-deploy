@@ -4,6 +4,32 @@ const { spawn, execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
+// === LOAD ROOT .ENV MANUALLY IN CPANEL ===
+try {
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    const envConfig = fs.readFileSync(envPath, 'utf8');
+    envConfig.split(/\r?\n/).forEach((line) => {
+      if (!line || line.trim().startsWith('#')) return;
+      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      if (match) {
+        const key = match[1];
+        let value = match[2] || '';
+        if (
+          (value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))
+        ) {
+          value = value.slice(1, -1);
+        }
+        if (!(key in process.env)) {
+          process.env[key] = value.trim();
+        }
+      }
+    });
+  }
+} catch (e) {}
+
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -38,7 +64,7 @@ const backendPath = path.join(__dirname, 'backend');
 if (fs.existsSync(backendPath) && !fs.existsSync(path.join(backendPath, 'node_modules'))) {
   logGateway("📦 [AUTO-INSTALL] Installing backend node_modules automatically...");
   try {
-    execSync('npm install --omit=dev', { cwd: backendPath, stdio: 'inherit', env: process.env });
+    execSync('npm install --omit=dev --ignore-scripts', { cwd: backendPath, stdio: 'inherit', env: process.env });
     logGateway("✅ [AUTO-INSTALL] Backend dependencies installed!");
   } catch (err) {
     logGateway(`⚠️ [AUTO-INSTALL FAILED] Backend npm install: ${err.message}`);
@@ -73,6 +99,7 @@ if (process.env.DATABASE_URL) {
 }
 
 // Port Internal Khusus (Dapat diatur via Environment Variables di cPanel, dengan fallback port default)
+// PENTING: Jika ada beberapa app di server yang sama, ubah port ini agar tidak tabrakan!
 const BACKEND_PORT = process.env.BACKEND_PORT || '39002';
 const FRONTEND_PORT = process.env.FRONTEND_PORT || '39001';
 

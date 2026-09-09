@@ -49,7 +49,10 @@ console.log("=========================================");
 
 // === LOAD ENV VARIABLES MANUALLY IN CPANEL ===
 try {
-  const envPath = path.join(__dirname, '.env');
+  let envPath = path.join(__dirname, '.env');
+  if (!fs.existsSync(envPath)) {
+    envPath = path.join(__dirname, '..', '.env');
+  }
   if (fs.existsSync(envPath)) {
     const envConfig = fs.readFileSync(envPath, 'utf8');
     envConfig.split(/\r?\n/).forEach((line) => {
@@ -71,7 +74,7 @@ try {
     });
     console.log('.env file loaded successfully.');
   } else {
-    console.warn('.env file not found.');
+    console.log('Using gateway process environment variables.');
   }
 } catch (err) {
   console.warn('Failed to load .env:', err);
