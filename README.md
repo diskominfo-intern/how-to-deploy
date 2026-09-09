@@ -89,3 +89,17 @@ docker exec -it test_nest_backend npx ts-node prisma/seed.ts
 
 ## 📖 Dokumentasi Lengkap
 Untuk panduan langkah demi langkah yang lebih mendalam, silakan baca **[DEPLOY.md](./DEPLOY.md)**.
+
+---
+
+## ?? Catatan Evaluasi & Troubleshooting Deployment cPanel
+
+Dokumentasi lengkap mengenai solusi atas kendala-kendala umum saat deployment (Error 503, crash auto-install Husky, tabrakan port, loop redirect 401, CORS, dll.) dapat dilihat pada:
+?? **[DEPLOYMENT_NOTES.md](./DEPLOYMENT_NOTES.md)**
+
+### Ringkasan Cepat:
+1. **Error 503 Service Unavailable:** Dilarang menggunakan user -k atau lsof di pp.js karena akses non-root cPanel akan memblokir perintah tersebut.
+2. **Husky Build Fail:** Gunakan "prepare": "husky || true" di package.json dan flag --ignore-scripts pada auto-install cPanel.
+3. **Tabrakan Port (EADDRINUSE):** Tentukan port internal khusus di file .env root (contoh: FRONTEND_PORT=39011, BACKEND_PORT=39012).
+4. **Loop 401 & Hardcode Localhost:** Pastikan frontend memakai relative path NEXT_PUBLIC_API_URL=/api dan interceptor Axios mencegah redirect loop jika sudah di halaman login.
+5. **CORS Backend:** Gunakan origin handler dinamis yang otomatis meloloskan subdomain *.makassarkota.go.id tanpa trailing slash kaku.
