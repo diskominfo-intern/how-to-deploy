@@ -1,0 +1,29 @@
+# ==============================================================================
+# CODEOWNERS - DISKOMINFO INTERN TEMPLATE (HOW-TO-DEPLOY)
+# ==============================================================================
+# File-file core deployment berikut dilindungi dan HANYA boleh diubah
+# atas persetujuan dari Lead Deployment / Maintainer: @PangeranJJ4321
+# ==============================================================================
+
+# Core Gateway & Server Scripts (JANGAN DIUBAH SEMBARANGAN)
+/app.js                   @PangeranJJ4321
+/server-cpanel.js         @PangeranJJ4321
+
+# Packaging & Build Automation
+/build-cpanel.ps1         @PangeranJJ4321
+/build-cpanel.sh          @PangeranJJ4321
+/fix-folder-names.sh      @PangeranJJ4321
+/package-master.json      @PangeranJJ4321
+
+# Container & Docker Configs
+/Dockerfile.cpanel        @PangeranJJ4321
+/docker-compose.cpanel.yml @PangeranJJ4321
+/docker-compose.yml       @PangeranJJ4321
+/.dockerignore            @PangeranJJ4321
+
+# Git Submodules Definition
+/.gitmodules              @PangeranJJ4321
+
+# Deployment Documentation & Notes
+/DEPLOYMENT_NOTES.md      @PangeranJJ4321
+/DEPLOY.md                @PangeranJJ4321

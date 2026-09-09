@@ -1,3 +1,27 @@
+/**
+ * ==============================================================================
+ * ?? PERINGATAN KERAS / DO NOT MODIFY THIS FILE! ??
+ * ==============================================================================
+ * File ini adalah Master Gateway cPanel Phusion Passenger.
+ * Pemilik / Maintainer: @PangeranJJ4321
+ *
+ * ATURAN MUTLAK:
+ * 1. DILARANG KERAS menambahkan shell command root Linux seperti:
+ *    - execSync('fuser -k ...')
+ *    - execSync('lsof ...')
+ *    - execSync('killall ...')
+ *    Akun cPanel BUKAN root/sudoers! Perintah tersebut AKAN MENYEBABKAN
+ *    APLIKASI CRASH SEKETIKA DENGAN ERROR 503 SERVICE UNAVAILABLE.
+ *
+ * 2. DILARANG mengubah port hardcode di dalam file ini.
+ *    Semua port WAJIB dikonfigurasi melalui file .env root:
+ *    (FRONTEND_PORT, BACKEND_PORT, dll).
+ *
+ * 3. Developer aplikasi HANYA diperbolehkan koding di dalam folder:
+ *    - next-frontend-boilerplate/src/
+ *    - nest-backend-boilerplate/src/
+ * ==============================================================================
+ */
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { spawn, execSync } = require('child_process');
@@ -236,5 +260,6 @@ app.use(
 app.listen(PORT, () => {
   logGateway(`🌐 [GATEWAY READY] Master Gateway listening on port ${PORT}`);
 });
+
 
 

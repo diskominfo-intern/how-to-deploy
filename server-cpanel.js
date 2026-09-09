@@ -1,3 +1,13 @@
+/**
+ * ==============================================================================
+ * ?? PERINGATAN KERAS / DO NOT MODIFY THIS FILE! ??
+ * ==============================================================================
+ * File ini adalah Wrapper Server cPanel Logger & Port Resolver untuk Next.js.
+ * Pemilik / Maintainer: @PangeranJJ4321
+ *
+ * JANGAN MENGUBAH file ini tanpa koordinasi dengan Lead Deployment.
+ * ==============================================================================
+ */
 const path = require('path')
 const fs = require('fs')
 
@@ -234,3 +244,4 @@ try {
   console.error("Pastikan output: 'standalone' sudah di-set di next.config.ts dan project sudah di-build ('npm run build').");
   process.exit(1);
 }
+
