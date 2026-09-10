@@ -8,9 +8,10 @@ echo "=========================================================="
 # 1. Build Backend
 echo "📦 [1/4] Building NestJS Backend..."
 cd nest-backend-boilerplate
+rm -rf dist
 if [ ! -d "node_modules" ]; then
     echo "📥 Installing backend dependencies..."
-    npm install
+    npm install --legacy-peer-deps
 fi
 npm run build
 cd ..
@@ -18,9 +19,10 @@ cd ..
 # 2. Build Frontend
 echo "📦 [2/4] Building Next.js Frontend (Standalone)..."
 cd next-frontend-boilerplate
+rm -rf .next
 if [ ! -d "node_modules" ]; then
     echo "📥 Installing frontend dependencies..."
-    npm install
+    npm install --legacy-peer-deps
 fi
 npm run build
 cd ..

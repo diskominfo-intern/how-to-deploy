@@ -5,21 +5,29 @@ Write-Host "==========================================================" -Foregro
 # 1. Build Backend
 Write-Host "[1/4] Building NestJS Backend..." -ForegroundColor Yellow
 Set-Location -Path "nest-backend-boilerplate"
+if (Test-Path "dist") {
+    Write-Host "Cleaning previous backend dist..." -ForegroundColor Cyan
+    Remove-Item -Recurse -Force "dist"
+}
 if (-not (Test-Path "node_modules")) {
     Write-Host "Installing backend dependencies..." -ForegroundColor Cyan
-    npm install
+    npm.cmd install --legacy-peer-deps
 }
-npm run build
+npm.cmd run build
 Set-Location -Path ".."
 
 # 2. Build Frontend
 Write-Host "[2/4] Building Next.js Frontend (Standalone)..." -ForegroundColor Yellow
 Set-Location -Path "next-frontend-boilerplate"
+if (Test-Path ".next") {
+    Write-Host "Cleaning previous frontend .next..." -ForegroundColor Cyan
+    Remove-Item -Recurse -Force ".next"
+}
 if (-not (Test-Path "node_modules")) {
     Write-Host "Installing frontend dependencies..." -ForegroundColor Cyan
-    npm install
+    npm.cmd install --legacy-peer-deps
 }
-npm run build
+npm.cmd run build
 Set-Location -Path ".."
 
 # 3. Create Staging Directory
