@@ -77,7 +77,10 @@ logGateway(`Directory     : ${__dirname}`);
 logGateway("=================================================");
 
 // 1. Verifikasi Keberadaan Path File
-const backendScript = path.join(__dirname, 'backend/dist/main.js');
+let backendScript = path.join(__dirname, 'backend/dist/main.js');
+if (!fs.existsSync(backendScript) && fs.existsSync(path.join(__dirname, 'backend/dist/src/main.js'))) {
+  backendScript = path.join(__dirname, 'backend/dist/src/main.js');
+}
 const frontendScript = path.join(__dirname, 'frontend/server-cpanel.js');
 
 logGateway(`[PATH CHECK] Backend script  : ${backendScript} -> ${fs.existsSync(backendScript) ? 'FOUND ✅' : 'NOT FOUND ❌'}`);
@@ -206,8 +209,16 @@ process.on('exit', () => {
 
 // -------------------------------------------------------------
 // 4. ROUTE KHUSUS VIEW LOG VIA BROWSER (/log)
+// Demi keamanan, hanya aktif di mode non-production (atau jika ENABLE_PUBLIC_LOG=true)
 // -------------------------------------------------------------
 app.get('/log', (req, res) => {
+  const isProduction = (process.env.NODE_ENV || 'production') === 'production';
+  const allowLog = process.env.ENABLE_PUBLIC_LOG === 'true';
+
+  if (isProduction && !allowLog) {
+    return res.status(404).send('Not Found');
+  }
+
   if (fs.existsSync(mainLogPath)) {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     fs.createReadStream(mainLogPath).pipe(res);
@@ -236,7 +247,7 @@ app.use(
   createProxyMiddleware({
     target: `http://127.0.0.1:${BACKEND_PORT}`,
     changeOrigin: true,
-    pathFilter: (pathname) => pathname.startsWith('/api') || pathname.startsWith('/api-docs'),
+    pathFilter: (pathname) => pathname.startsWith('/api') || pathname.startsWith('/api-docs') || pathname.startsWith('/uploads'),
     onError: handleProxyError('Backend NestJS', BACKEND_PORT),
     on: {
       error: handleProxyError('Backend NestJS', BACKEND_PORT),
