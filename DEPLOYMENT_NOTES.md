@@ -8,32 +8,11 @@ Dokumen ini merangkum seluruh akar permasalahan (ranjau teknis) yang sering terj
 
 ### 1. Error 503 Service Unavailable (Crash di Gateway `app.js`)
 * **Penyebab:** Pada `app.js`, terdapat perintah shell seperti `execSync('fuser -k ...')` atau `lsof` untuk mematikan port sebelum aplikasi jalan. Pada hosting cPanel CloudLinux, akun cPanel **bukan root/sudoers**. Perintah tersebut otomatis diblokir sistem dengan exit code error, sehingga `app.js` crash seketika sebelum server sempat menyala.
-* **Solusi:**
-  - Hapus seluruh pemanggilan `fuser` dan `lsof`.
-  - Percayakan pembersihan port ke manajemen child process Node.js internal dan bersihkan port saat event `SIGTERM` / `SIGINT`.
-
----
-
-### 2. Auto-Install cPanel Gagal Karena Git Hooks (Husky)
-* **Penyebab:** Pada `package.json`, terdapat hook `"prepare": "husky"`. Ketika cPanel atau pipeline CI/CD menjalankan `npm install --production`, folder `.git` tidak ditemukan atau hak aksesnya terbatas, menyebabkan proses instalasi gagal (`exit code 1`) dan deployment batal.
-* **Solusi:**
-  - Ubah script `prepare` di `package.json` menjadi:
-    ```json
-    "prepare": "husky || true"
-    ```
-  - Pada script auto-install di `app.js`, tambahkan flag `--ignore-scripts`:
-    ```javascript
-    execSync('npm install --production --ignore-scripts');
-    ```
-
----
-
-### 3. Tabrakan Port Internal (`EADDRINUSE`)
-* **Penyebab:** cPanel hosting digunakan secara bersama-sama oleh banyak aplikasi. Port default seperti `3000` (backend) dan `3001` (frontend) sering kali sudah digunakan oleh aplikasi lain di server, menyebabkan error `EADDRINUSE`.
-* **Solusi:**
-  - Gunakan rentang port internal yang unik (contoh: `39011` untuk Frontend dan `39012` untuk Backend).
-  - Pastikan gateway `app.js` membaca port secara dinamis dari file `.env` root:
-    ```env
+* **Solusi (Otomatis & Dinamis):**
+  - Gateway pp.js kini dilengkapi fitur alokasi port dinamis (getTwoFreePorts()) yang meminta kernel OS memberikan 2 port acak yang sedang kosong/bebas saat booting. Pengguna tidak perlu menyetel port manual lagi.
+  - Opsi override manual tetap tersedia melalui file .env root (FRONTEND_PORT & BACKEND_PORT) jika ingin port spesifik:
+    `env
+    # Opsional (Default: otomatis mencari port bebas)
     FRONTEND_PORT=39011
     BACKEND_PORT=39012
     ```

@@ -27,6 +27,35 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const { spawn, execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const net = require('net');
+
+/**
+ * Helper to dynamically allocate two distinct available ports from the OS kernel.
+ * Completely eliminates EADDRINUSE collisions in shared cPanel environments.
+ */
+function getTwoFreePorts() {
+  return new Promise((resolve, reject) => {
+    const s1 = net.createServer();
+    s1.unref();
+    s1.on('error', reject);
+    s1.listen(0, '127.0.0.1', () => {
+      const p1 = s1.address().port;
+      const s2 = net.createServer();
+      s2.unref();
+      s2.on('error', (err) => {
+        s1.close(() => reject(err));
+      });
+      s2.listen(0, '127.0.0.1', () => {
+        const p2 = s2.address().port;
+        s1.close(() => {
+          s2.close(() => {
+            resolve([p1, p2]);
+          });
+        });
+      });
+    });
+  });
+}
 
 // === LOAD ROOT .ENV MANUALLY IN CPANEL ===
 try {
@@ -125,90 +154,8 @@ if (process.env.DATABASE_URL) {
   }
 }
 
-// Port Internal Khusus (Dapat diatur via Environment Variables di cPanel, dengan fallback port default)
-// PENTING: Jika ada beberapa app di server yang sama, ubah port ini agar tidak tabrakan!
-const BACKEND_PORT = process.env.BACKEND_PORT || '39002';
-const FRONTEND_PORT = process.env.FRONTEND_PORT || '39001';
-
-// Status Kesiapan Process
-let isBackendAlive = false;
-let isFrontendAlive = false;
-
 // -------------------------------------------------------------
-// 2. SPAWN BACKEND PROCESS (NestJS - Port 39002)
-// -------------------------------------------------------------
-logGateway(`🚀 [SPAWN ATTEMPT] Spawning NestJS Backend on internal port ${BACKEND_PORT}...`);
-const backendProcess = spawn('node', [backendScript], {
-  env: { ...process.env, PORT: BACKEND_PORT },
-});
-
-backendProcess.on('spawn', () => {
-  isBackendAlive = true;
-  logGateway(`✅ [BACKEND SPAWNED SUCCESS] PID: ${backendProcess.pid}`);
-});
-
-backendProcess.on('error', (err) => {
-  isBackendAlive = false;
-  logGateway(`❌ [BACKEND SPAWN ERROR] ${err.stack || err.message}`);
-});
-
-backendProcess.on('exit', (code, signal) => {
-  isBackendAlive = false;
-  logGateway(`🛑 [BACKEND PROCESS EXIT] Code: ${code}, Signal: ${signal}`);
-});
-
-backendProcess.stdout.on('data', (data) => {
-  const msg = data.toString().trim();
-  logGateway(`[BACKEND STDOUT] ${msg}`);
-});
-
-backendProcess.stderr.on('data', (data) => {
-  const msg = data.toString().trim();
-  logGateway(`[BACKEND STDERR] ${msg}`);
-});
-
-// -------------------------------------------------------------
-// 3. SPAWN FRONTEND PROCESS (Next.js - Port 39001)
-// -------------------------------------------------------------
-logGateway(`🚀 [SPAWN ATTEMPT] Spawning Next.js Frontend on internal port ${FRONTEND_PORT}...`);
-const frontendProcess = spawn('node', [frontendScript], {
-  env: { ...process.env, PORT: FRONTEND_PORT, HOSTNAME: '127.0.0.1' },
-});
-
-frontendProcess.on('spawn', () => {
-  isFrontendAlive = true;
-  logGateway(`✅ [FRONTEND SPAWNED SUCCESS] PID: ${frontendProcess.pid}`);
-});
-
-frontendProcess.on('error', (err) => {
-  isFrontendAlive = false;
-  logGateway(`❌ [FRONTEND SPAWN ERROR] ${err.stack || err.message}`);
-});
-
-frontendProcess.on('exit', (code, signal) => {
-  isFrontendAlive = false;
-  logGateway(`🛑 [FRONTEND PROCESS EXIT] Code: ${code}, Signal: ${signal}`);
-});
-
-frontendProcess.stdout.on('data', (data) => {
-  const msg = data.toString().trim();
-  logGateway(`[FRONTEND STDOUT] ${msg}`);
-});
-
-frontendProcess.stderr.on('data', (data) => {
-  const msg = data.toString().trim();
-  logGateway(`[FRONTEND STDERR] ${msg}`);
-});
-
-// Cleanup saat exit
-process.on('exit', () => {
-  logGateway("🛑 [GATEWAY SHUTDOWN] Terminating child processes...");
-  try { backendProcess.kill(); } catch (e) {}
-  try { frontendProcess.kill(); } catch (e) {}
-});
-
-// -------------------------------------------------------------
-// 4. ROUTE KHUSUS VIEW LOG VIA BROWSER (/log)
+// 2. ROUTE KHUSUS VIEW LOG VIA BROWSER (/log)
 // Demi keamanan, hanya aktif di mode non-production (atau jika ENABLE_PUBLIC_LOG=true)
 // -------------------------------------------------------------
 app.get('/log', (req, res) => {
@@ -228,48 +175,151 @@ app.get('/log', (req, res) => {
 });
 
 // -------------------------------------------------------------
-// 5. PROXY CONFIGURATION WITH DETAILED ERROR LOGGING
+// 3. ASYNC GATEWAY BOOTSTRAP (Dynamic Port Allocation & Spawning)
 // -------------------------------------------------------------
-const handleProxyError = (serviceName, targetPort) => (err, req, res) => {
-  logGateway(`❌ [PROXY ERROR - ${serviceName}] Failed to proxy ${req.method} ${req.url} -> http://127.0.0.1:${targetPort}. Error: ${err.message}`);
-  if (!res.headersSent) {
-    res.status(502).json({
-      error: `Proxy Error (${serviceName})`,
-      message: `${serviceName} service on port ${targetPort} is currently starting or unreachable.`,
-      details: err.message,
-      timestamp: new Date().toISOString(),
-    });
+async function startGateway() {
+  // Alokasi port internal secara dinamis dari kernel OS
+  let dynamicBackendPort = '39002';
+  let dynamicFrontendPort = '39001';
+  try {
+    const [p1, p2] = await getTwoFreePorts();
+    dynamicBackendPort = String(p1);
+    dynamicFrontendPort = String(p2);
+  } catch (err) {
+    logGateway(`⚠️ [PORT WARNING] Failed to acquire dynamic free ports: ${err.message}. Falling back to default.`);
   }
-};
 
-// Proxy /api dan /api-docs ke NestJS Backend (Port 39002)
-app.use(
-  createProxyMiddleware({
-    target: `http://127.0.0.1:${BACKEND_PORT}`,
-    changeOrigin: true,
-    pathFilter: (pathname) => pathname.startsWith('/api') || pathname.startsWith('/api-docs') || pathname.startsWith('/uploads'),
-    onError: handleProxyError('Backend NestJS', BACKEND_PORT),
-    on: {
-      error: handleProxyError('Backend NestJS', BACKEND_PORT),
+  const BACKEND_PORT = process.env.BACKEND_PORT || dynamicBackendPort;
+  const FRONTEND_PORT = process.env.FRONTEND_PORT || dynamicFrontendPort;
+
+  logGateway(`🎯 [PORT ALLOCATION] Backend Port  : ${BACKEND_PORT} (${process.env.BACKEND_PORT ? 'Manual ENV' : 'Dynamic Auto-Allocated'})`);
+  logGateway(`🎯 [PORT ALLOCATION] Frontend Port : ${FRONTEND_PORT} (${process.env.FRONTEND_PORT ? 'Manual ENV' : 'Dynamic Auto-Allocated'})`);
+
+  // Status Kesiapan Process
+  let isBackendAlive = false;
+  let isFrontendAlive = false;
+
+  // SPAWN BACKEND PROCESS (NestJS)
+  logGateway(`🚀 [SPAWN ATTEMPT] Spawning NestJS Backend on internal port ${BACKEND_PORT}...`);
+  const backendProcess = spawn('node', [backendScript], {
+    env: { ...process.env, PORT: BACKEND_PORT },
+  });
+
+  backendProcess.on('spawn', () => {
+    isBackendAlive = true;
+    logGateway(`✅ [BACKEND SPAWNED SUCCESS] PID: ${backendProcess.pid}`);
+  });
+
+  backendProcess.on('error', (err) => {
+    isBackendAlive = false;
+    logGateway(`❌ [BACKEND SPAWN ERROR] ${err.stack || err.message}`);
+  });
+
+  backendProcess.on('exit', (code, signal) => {
+    isBackendAlive = false;
+    logGateway(`🛑 [BACKEND PROCESS EXIT] Code: ${code}, Signal: ${signal}`);
+  });
+
+  backendProcess.stdout.on('data', (data) => {
+    const msg = data.toString().trim();
+    logGateway(`[BACKEND STDOUT] ${msg}`);
+  });
+
+  backendProcess.stderr.on('data', (data) => {
+    const msg = data.toString().trim();
+    logGateway(`[BACKEND STDERR] ${msg}`);
+  });
+
+  // SPAWN FRONTEND PROCESS (Next.js)
+  logGateway(`🚀 [SPAWN ATTEMPT] Spawning Next.js Frontend on internal port ${FRONTEND_PORT}...`);
+  const frontendProcess = spawn('node', [frontendScript], {
+    env: { ...process.env, PORT: FRONTEND_PORT, HOSTNAME: '127.0.0.1' },
+  });
+
+  frontendProcess.on('spawn', () => {
+    isFrontendAlive = true;
+    logGateway(`✅ [FRONTEND SPAWNED SUCCESS] PID: ${frontendProcess.pid}`);
+  });
+
+  frontendProcess.on('error', (err) => {
+    isFrontendAlive = false;
+    logGateway(`❌ [FRONTEND SPAWN ERROR] ${err.stack || err.message}`);
+  });
+
+  frontendProcess.on('exit', (code, signal) => {
+    isFrontendAlive = false;
+    logGateway(`🛑 [FRONTEND PROCESS EXIT] Code: ${code}, Signal: ${signal}`);
+  });
+
+  frontendProcess.stdout.on('data', (data) => {
+    const msg = data.toString().trim();
+    logGateway(`[FRONTEND STDOUT] ${msg}`);
+  });
+
+  frontendProcess.stderr.on('data', (data) => {
+    const msg = data.toString().trim();
+    logGateway(`[FRONTEND STDERR] ${msg}`);
+  });
+
+  // Cleanup saat exit
+  const cleanExit = () => {
+    logGateway("🛑 [GATEWAY SHUTDOWN] Terminating child processes...");
+    try { backendProcess.kill(); } catch (e) {}
+    try { frontendProcess.kill(); } catch (e) {}
+    process.exit();
+  };
+  process.on('exit', cleanExit);
+  process.on('SIGINT', cleanExit);
+  process.on('SIGTERM', cleanExit);
+
+  // -------------------------------------------------------------
+  // PROXY CONFIGURATION WITH DETAILED ERROR LOGGING
+  // -------------------------------------------------------------
+  const handleProxyError = (serviceName, targetPort) => (err, req, res) => {
+    logGateway(`❌ [PROXY ERROR - ${serviceName}] Failed to proxy ${req.method} ${req.url} -> http://127.0.0.1:${targetPort}. Error: ${err.message}`);
+    if (!res.headersSent) {
+      res.status(502).json({
+        error: `Proxy Error (${serviceName})`,
+        message: `${serviceName} service on port ${targetPort} is currently starting or unreachable.`,
+        details: err.message,
+        timestamp: new Date().toISOString(),
+      });
     }
-  })
-);
+  };
 
-// Proxy rute web lainnya ke Next.js Frontend (Port 39001)
-app.use(
-  '/',
-  createProxyMiddleware({
-    target: `http://127.0.0.1:${FRONTEND_PORT}`,
-    changeOrigin: true,
-    onError: handleProxyError('Frontend NextJS', FRONTEND_PORT),
-    on: {
-      error: handleProxyError('Frontend NextJS', FRONTEND_PORT),
-    }
-  })
-);
+  // Proxy /api, /api-docs, dan /uploads ke NestJS Backend
+  app.use(
+    createProxyMiddleware({
+      target: `http://127.0.0.1:${BACKEND_PORT}`,
+      changeOrigin: true,
+      pathFilter: (pathname) => pathname.startsWith('/api') || pathname.startsWith('/api-docs') || pathname.startsWith('/uploads'),
+      onError: handleProxyError('Backend NestJS', BACKEND_PORT),
+      on: {
+        error: handleProxyError('Backend NestJS', BACKEND_PORT),
+      }
+    })
+  );
 
-app.listen(PORT, () => {
-  logGateway(`🌐 [GATEWAY READY] Master Gateway listening on port ${PORT}`);
+  // Proxy rute web lainnya ke Next.js Frontend
+  app.use(
+    '/',
+    createProxyMiddleware({
+      target: `http://127.0.0.1:${FRONTEND_PORT}`,
+      changeOrigin: true,
+      onError: handleProxyError('Frontend NextJS', FRONTEND_PORT),
+      on: {
+        error: handleProxyError('Frontend NextJS', FRONTEND_PORT),
+      }
+    })
+  );
+
+  app.listen(PORT, () => {
+    logGateway(`🌐 [GATEWAY READY] Master Gateway listening on port ${PORT}`);
+  });
+}
+
+startGateway().catch((err) => {
+  logGateway(`❌ [FATAL BOOT ERROR] ${err.stack || err.message}`);
 });
 
 
